@@ -1,0 +1,10 @@
+{
+    "API": {
+        "apiport" : 3000,
+        "interface": "en0",
+        "dbconnection" : "mongodb://localhost:27017",
+        "dbname" : "musicextractor",
+        "dbcollection" : "mobid_collection",
+        "UtcOffset" : 2
+        }
+}

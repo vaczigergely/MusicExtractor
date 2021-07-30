@@ -1,0 +1,46 @@
+doctype html
+head
+    style.
+        body {
+            background: #282B30;
+            color: white;
+        }
+        #services {
+        font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+        font-size: 12px;
+        border-collapse: collapse;
+        width: 100%;
+        }
+        #services td,
+        #services th {
+        border: 0px solid #ddd;
+        padding: 8px;
+        }
+        #services tr:nth-child(even) {
+        background-color: #32353C;
+        }
+        #services tr:hover {
+        background-color: #32353C;
+        }
+        #services th {
+        padding-top: 12px;
+        padding-bottom: 12px;
+        text-align: left;
+        background-color: #51545F;
+        color: white;
+        }
+        
+table#services
+    tbody
+        tr
+            th Insert time
+            th Asset name 
+            th Status 
+        each item in queue
+            tr
+                td=item.insertTime
+                td=item.name 
+                td=item.status 
+
+
+a(href='/') Back

@@ -1,0 +1,10 @@
+{
+    "API": {
+        "apiport" : 8081,
+        "webappport": "8082",
+        "interface": "Ethernet0 2",
+        "dbconnection" : "mongodb://192.168.0.206:27017",
+        "UtcOffset" : 2,
+        "NexisIP": "http://192.168.0.221"
+        }
+}
