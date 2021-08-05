@@ -10,6 +10,8 @@ const PORT = config.get('API.apiport');
 const CONNECTION_URL = config.get('API.dbconnection');
 const DATABASE_NAME = config.get('API.dbname');
 const DATABASE_COLLECTION = config.get('API.dbcollection');
+const controls = require("./controls");
+
 
 app.use(cors());
 
@@ -19,9 +21,64 @@ app.set("views", path.join(__dirname, "views"));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-router.get("/", (req, res) => {
-  res.render("index");
+function removeEntry () {
+  try {
+          console.log('removed');                                                  
+  } catch(err) {
+      reject(err);                                                                
+  }
+}
+
+router.get("/", async (req, res) => {
+  const client = new MongoClient(CONNECTION_URL, { useNewUrlParser: true, useUnifiedTopology: true });
+
+    try {
+        await client.connect();
+        
+        const database = client.db(DATABASE_NAME);
+        const collection = database.collection(DATABASE_COLLECTION);
+   
+        let queue = await collection.find().toArray();
+        queue = queue.reverse();
+
+        let pageInfo = {};
+        pageInfo.title = "MusicExtractor";
+        pageInfo.queue = queue;
+        
+        res.render("asset", pageInfo);
+
+      } finally {
+        await client.close();
+      }
 });
+
+router.get("/remove", async (req, res) => {
+  const client = new MongoClient(CONNECTION_URL, { useNewUrlParser: true, useUnifiedTopology: true });
+
+    try {
+        await client.connect();
+        
+        const database = client.db(DATABASE_NAME);
+        const collection = database.collection(DATABASE_COLLECTION);
+
+        let globalID = req.query.glid;
+
+        await collection.deleteOne({ mobid :  globalID});
+   
+        let queue = await collection.find().toArray();
+        queue = queue.reverse();
+
+        let pageInfo = {};
+        pageInfo.title = "MusicExtractor";
+        pageInfo.queue = queue;
+        
+        res.render("asset", pageInfo);
+
+      } finally {
+        await client.close();
+      }
+});
+
 
 router.get('/asset', async (req, res) => {
     let globalID = req.query.glid;
@@ -34,14 +91,22 @@ router.get('/asset', async (req, res) => {
     let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
     let dateTime = date+' '+time;
 
+    let sentBy = '';
+    let ip = await controls.getRequestIP(req);
+    let token = await controls.getAccessToken();
+    let sessions = await controls.getSessions(token);
+
+    sentBy = sessions[ip];
+
     const client = new MongoClient(CONNECTION_URL, { useNewUrlParser: true, useUnifiedTopology: true });
 
     try {
         await client.connect();
+        
         const database = client.db(DATABASE_NAME);
         const collection = database.collection(DATABASE_COLLECTION);
         // create a document to be inserted
-        const doc = { name : assetName, mobid : globalID.slice(indexOfID), insertTime :  dateTime, status : 'Queued' };
+        const doc = { name : assetName, mobid : globalID.slice(indexOfID), insertTime :  dateTime, status : 'Queued', sentBy : sentBy };
         let alreadyThere = await collection.findOne({ mobid :  globalID.slice(indexOfID)})
 
         if(!alreadyThere)
@@ -51,11 +116,15 @@ router.get('/asset', async (req, res) => {
             `${result.insertedCount} documents were inserted with the _id: ${result.insertedId}`,
           );
         }
-
+        
         let queue = await collection.find().toArray();
         queue = queue.reverse();
+
+        let pageInfo = {};
+        pageInfo.title = "MusicExtractor";
+        pageInfo.queue = queue;
         
-        res.render("asset", { title: "Assets waiting to be processed", queue });
+        res.render("asset", pageInfo);
 
       } finally {
         await client.close();

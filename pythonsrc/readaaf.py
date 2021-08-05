@@ -19,7 +19,7 @@ from timecode import frames_to_timecode
 # Request the AAF from Web Services based on the MOB ID
 #######################################################
 
-def request_aaf(InterplayURI):
+def request_aaf(InterplayURI, MobID):
     wsdl = 'http://192.168.112.23/services/Assets?wsdl'
 
     headerArr = {}
@@ -29,31 +29,38 @@ def request_aaf(InterplayURI):
     cli = client.get_element('ns0:UserCredentials')
     header_value_1 = cli(Username='cloudadmin', Password='Avid.1234')
 
-    def read_aaf(client, InterplayURI):
-        r = client.service.GetLatest(InterplayURI = InterplayURI, _soapheaders=[header_value_1]) #TODO to use env variable for the password
-        return r.File
-
-    f = open('temp.aaf', 'wb')
-    f.write(read_aaf(client, InterplayURI))
-    f.close()
+    try:
+        def read_aaf(client, InterplayURI):
+            r = client.service.GetLatest(InterplayURI = InterplayURI, _soapheaders=[header_value_1]) #TODO to use env variable for the password
+            return r.File
+        f = open('../processing/temp.aaf', 'wb')
+        f.write(read_aaf(client, InterplayURI))
+        f.close()
+    except Exception as e:
+        print('Cannot get AAF from the PAM: ' + str(e))
+        db.mobid_collection.update_one({'mobid' : MobID }, {'$set': {'status': 'Error'}})
+  
 
 
 #######################################################
 # Convert AAF to XML
 #######################################################
 
-def aaf_to_xml():
+def aaf_to_xml(MobID):
+    source = "temp.aaf"
+    target = "temp.xml"
     try:
-        subprocess.run(["aaffmtconv.exe", "-xml temp.aaf temp.xml"])
+        subprocess.run(r"../processing/aaffmtconv.exe -xml ../processing/{} ../processing/{}".format(source, target))
     except Exception as e:
         print('Cannot convert AAF to XML: ' + str(e))
+        db.mobid_collection.update_one({'mobid' : MobID }, {'$set': {'status': 'Error'}})
 
 
 #######################################################
 # Remove 'namespace' from the converted XML
 #######################################################
 
-def prepare_aaf(source):
+def prepare_xml(source):
     fin = open(source, "rt")
     data = fin.read()
     data = data.replace('xmlns="http://www.aafassociation.org/aafx/v1.1/20090617"', '')
@@ -71,7 +78,7 @@ def prepare_aaf(source):
 #       - name of every component (filename)
 #######################################################
 
-def parse_xml_converted_aaf(source, MobID):
+def parse_xml(source, MobID):
     try:
         tree = ET.parse(source)
     except Exception as e:
@@ -179,17 +186,17 @@ def worker():
     for item in queued:
         MobID = item['mobid']
         InterplayURI = 'interplay://SnittWG?mobid={}'.format(MobID)
-        request_aaf(InterplayURI=InterplayURI)
-        aaf_to_xml()
+        request_aaf(InterplayURI, MobID)
+        aaf_to_xml(MobID)
 
-        source = 'temp.xml'
-        prepare_aaf(source)
-        componentlist = parse_xml_converted_aaf(source, MobID)
+        source = '../processing/temp.xml'
+        prepare_xml(source)
+        componentlist = parse_xml(source, MobID)
 
         for item in componentlist:
             print(item)
 
-        #db.mobid_collection.update_one({'mobid' : MobID }, {'$set': {'status': 'Done'}})
+        db.mobid_collection.update_one({'mobid' : MobID }, {'$set': {'status': 'Done'}})
 
     
 
@@ -202,16 +209,6 @@ if __name__ == "__main__":
     client = MongoClient('mongodb://localhost:27017')
     db = client.musicextractor
     Prefix = 'urn:smpte:umid:'
-
-    #### DEV ####
-    MobID = '060a2b340101010501010f1013-000000-189fd9e99315a505-261e6451063c-fa57'
-    
-    source = 'temp.xml'
-    prepare_aaf(source)
-    componentlist = parse_xml_converted_aaf(source, MobID)
-    for item in componentlist:
-        print(item)
-    #############
 
     scheduledfor = 1
     schedule.every(scheduledfor).minutes.do(worker)

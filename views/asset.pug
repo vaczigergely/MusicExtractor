@@ -1,9 +1,14 @@
 doctype html
 head
+    title=title
     style.
         body {
             background: #282B30;
             color: white;
+        }
+        a:link {
+            color: #b3b3b3;
+            text-decoration: none;
         }
         #services {
         font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
@@ -27,20 +32,23 @@ head
         padding-bottom: 12px;
         text-align: left;
         background-color: #51545F;
-        color: white;
+        color: white; 
         }
-        
-table#services
-    tbody
-        tr
-            th Insert time
-            th Asset name 
-            th Status 
-        each item in queue
+
+body
+    table#services
+        tbody
             tr
-                td=item.insertTime
-                td=item.name 
-                td=item.status 
-
-
-a(href='/') Back
+                th Insert time
+                th Asset name
+                th Sent by
+                th Status
+                th 
+            each item in queue
+                tr
+                    td=item.insertTime
+                    td=item.name
+                    td=item.sentBy
+                    td=item.status
+                    td
+                        a(href=`/remove?glid=${item.mobid}`) REMOVE
