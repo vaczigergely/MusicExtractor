@@ -2,6 +2,8 @@ const express = require('express');
 const app = express();
 const path = require("path");
 const router = express.Router();
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const config = require('config');
@@ -11,6 +13,7 @@ const CONNECTION_URL = config.get('API.dbconnection');
 const DATABASE_NAME = config.get('API.dbname');
 const DATABASE_COLLECTION = config.get('API.dbcollection');
 const controls = require("./controls");
+const changeStreams = require('./changeStreams');
 
 
 app.use(cors());
@@ -21,30 +24,26 @@ app.set("views", path.join(__dirname, "views"));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-function removeEntry () {
-  try {
-          console.log('removed');                                                  
-  } catch(err) {
-      reject(err);                                                                
-  }
-}
+let pageInfo = {};
+pageInfo.title = "MusicExtractor";
+pageInfo.queue = [];
+
 
 router.get("/", async (req, res) => {
+  console.log('Connecting to the database...');
   const client = new MongoClient(CONNECTION_URL, { useNewUrlParser: true, useUnifiedTopology: true });
 
     try {
         await client.connect();
+        console.log(`Connected to ${DATABASE_NAME}`);
         
         const database = client.db(DATABASE_NAME);
         const collection = database.collection(DATABASE_COLLECTION);
    
         let queue = await collection.find().toArray();
         queue = queue.reverse();
-
-        let pageInfo = {};
-        pageInfo.title = "MusicExtractor";
         pageInfo.queue = queue;
-        
+
         res.render("asset", pageInfo);
 
       } finally {
@@ -68,8 +67,6 @@ router.get("/remove", async (req, res) => {
         let queue = await collection.find().toArray();
         queue = queue.reverse();
 
-        let pageInfo = {};
-        pageInfo.title = "MusicExtractor";
         pageInfo.queue = queue;
         
         res.render("asset", pageInfo);
@@ -120,10 +117,8 @@ router.get('/asset', async (req, res) => {
         let queue = await collection.find().toArray();
         queue = queue.reverse();
 
-        let pageInfo = {};
-        pageInfo.title = "MusicExtractor";
         pageInfo.queue = queue;
-        
+
         res.render("asset", pageInfo);
 
       } finally {
@@ -131,6 +126,7 @@ router.get('/asset', async (req, res) => {
       }
 });
 
+changeStreams.changeStreamMonitor();
 
 app.use("/", router);
-app.listen(process.env.port || 3000);
+app.listen(process.env.port || PORT);

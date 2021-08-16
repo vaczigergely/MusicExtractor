@@ -3,7 +3,7 @@
         "apiport" : 8081,
         "webappport": "8082",
         "interface": "Ethernet0 2",
-        "dbconnection" : "mongodb://localhost:27017,127.0.0.1:27018/?replicaSet=rs0",
+        "dbconnection" : "mongodb://localhostt:27017/?replicaSet=rs0&readPreference=primary",
         "UtcOffset" : 2,
         "NexisIP": "http://192.168.0.221"
         }

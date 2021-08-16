@@ -2,7 +2,7 @@
     "API": {
         "apiport" : 3000,
         "interface": "en0",
-        "dbconnection" : "mongodb://localhost:27017",
+        "dbconnection" : "mongodb://localhost:27017/?replicaSet=rs0&readPreference=primary",
         "dbname" : "musicextractor",
         "dbcollection" : "mobid_collection",
         "UtcOffset" : 2
