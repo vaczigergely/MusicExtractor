@@ -18,17 +18,29 @@ function closeChangeStream(timeInMs = 120000, changeStream) {
 };
 
 
-async function monitorListingsUsingEventEmitter(client, timeInMs = 60000, pipeline = [
-      
-    ]){
+async function monitorListingsUsingEventEmitter(client, timeInMs = 60000, pipeline = []){
     const collection = client.db(DATABASE_NAME).collection(DATABASE_COLLECTION);
-    const changeStream = collection.watch(pipeline);
-
-    changeStream.on('change', (next) => {
-        console.log(next);
+    let cachedResumeToken;
+    let changeStream = collection.watch(resume_after=cachedResumeToken);
+    
+    changeStream.on('change', (change) => {
+        // TODO if operationType is update then emit status change
+        cachedResumeToken = change["_id"]
+        if(change.operationType == 'update')
+        {
+            console.log(change.operationType);
+        }
     });
 
-    await closeChangeStream(timeInMs, changeStream);
+    changeStream.on('error', (error) => {
+        console.log(error)
+        if (cachedResumeToken) {
+            establishChangeStream(cachedResumeToken)
+        }
+    })
+
+    // TODO Handle changestream closure
+    //await closeChangeStream(timeInMs, changeStream);
 }
 
 module.exports = {
@@ -57,7 +69,7 @@ module.exports = {
 
         } finally {
             // Close the connection to the MongoDB cluster
-            await client.close();
+            //await client.close();
         }
     }
 }

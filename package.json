@@ -4,9 +4,10 @@
   "description": "Extracting audio filenames from PAM sequences",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
   },
-  "author": "",
+  "author": "Gergely Vaczi",
   "license": "ISC",
   "dependencies": {
     "axios": "^0.21.1",
