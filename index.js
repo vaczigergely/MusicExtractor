@@ -2,8 +2,8 @@ const express = require('express');
 const app = express();
 const path = require("path");
 const router = express.Router();
-const http = require('http').Server(app);
-const io = require('socket.io')(http);
+const http = require('http');
+
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const config = require('config');
@@ -129,4 +129,14 @@ router.get('/asset', async (req, res) => {
 changeStreams.changeStreamMonitor();
 
 app.use("/", router);
-app.listen(process.env.port || PORT);
+const server = http.createServer(app);
+const io = require('socket.io')(server);
+server.listen(process.env.port || PORT);
+
+io.on('connection', (socket) => {
+  console.log('a user connected')
+  socket.on('chatter', (message) => {
+    console.log('chatter : ', message)
+    io.emit('chatter', message)
+  })
+})

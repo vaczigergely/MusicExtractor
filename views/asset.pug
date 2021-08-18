@@ -34,6 +34,8 @@ head
         background-color: #51545F;
         color: white; 
         }
+    script(src='https://cdn.socket.io/3.1.3/socket.io.min.js')
+    script(src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js')
 
 body
     table#services
@@ -52,3 +54,10 @@ body
                     td=item.status
                     td
                         a(href=`/remove?glid=${item.mobid}`) REMOVE
+
+    script.
+        const socket = io();
+
+        socket.on('chatter', function(message) {
+          $('#chat-messages').append($('<li>').text(message));
+        });
