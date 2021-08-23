@@ -3,7 +3,6 @@ const app = express();
 const path = require("path");
 const router = express.Router();
 const http = require('http');
-
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const config = require('config');
@@ -13,13 +12,15 @@ const CONNECTION_URL = config.get('API.dbconnection');
 const DATABASE_NAME = config.get('API.dbname');
 const DATABASE_COLLECTION = config.get('API.dbcollection');
 const controls = require("./controls");
-const changeStreams = require('./changeStreams');
+const { changeStreamMonitor } = require('./changeStreams');
 
 
 app.use(cors());
 
 app.set("view engine", "pug");
 app.set("views", path.join(__dirname, "views"));
+
+app.use(express.static(__dirname+'/public'));
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -32,7 +33,7 @@ pageInfo.queue = [];
 router.get("/", async (req, res) => {
   console.log('Connecting to the database...');
   const client = new MongoClient(CONNECTION_URL, { useNewUrlParser: true, useUnifiedTopology: true });
-
+  
     try {
         await client.connect();
         console.log(`Connected to ${DATABASE_NAME}`);
@@ -126,17 +127,30 @@ router.get('/asset', async (req, res) => {
       }
 });
 
-changeStreams.changeStreamMonitor();
+
 
 app.use("/", router);
 const server = http.createServer(app);
 const io = require('socket.io')(server);
 server.listen(process.env.port || PORT);
 
-io.on('connection', (socket) => {
-  console.log('a user connected')
-  socket.on('chatter', (message) => {
-    console.log('chatter : ', message)
-    io.emit('chatter', message)
-  })
-})
+const socket = exports.socket = io;
+
+io.on('connection', function(socket){
+  console.log(socket.id);
+
+  socket.on('disconnect', (reason) => {
+      console.log(reason);
+  });
+
+  socket.on("helloFromAsset", (data) => {
+    console.log(data);
+  });
+
+  socket.on("helloFromChangeStream", (data) => {
+    console.log(data);
+  });
+});
+
+
+changeStreamMonitor();

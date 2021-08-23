@@ -1,11 +1,12 @@
 const { MongoClient } = require('mongodb');
 const config = require('config');
-
 const CONNECTION_URL = config.get('API.dbconnection');
 const DATABASE_NAME = config.get('API.dbname');
 const DATABASE_COLLECTION = config.get('API.dbcollection');
+//const io = require('https://cdn.socket.io/3.1.3/socket.io.min.js');
 
-const ttimeInMs = 60000;
+
+//socket.emit("helloFromChangeStream", { a: "This is coming from changeStream.js", c: [] });
 
 function closeChangeStream(timeInMs = 120000, changeStream) {
     return new Promise((resolve) => {
@@ -22,10 +23,14 @@ async function monitorListingsUsingEventEmitter(client, timeInMs = 60000, pipeli
     const collection = client.db(DATABASE_NAME).collection(DATABASE_COLLECTION);
     let cachedResumeToken;
     let changeStream = collection.watch(resume_after=cachedResumeToken);
-    
+
     changeStream.on('change', (change) => {
         // TODO if operationType is update then emit status change
         cachedResumeToken = change["_id"]
+
+        const socket = require('./index.js').socket;     
+        socket.emit("helloFromChangeStream", { a: "This is coming from changeStream.js", c: [] });
+        
         if(change.operationType == 'update')
         {
             console.log(change.operationType);
@@ -43,14 +48,13 @@ async function monitorListingsUsingEventEmitter(client, timeInMs = 60000, pipeli
     //await closeChangeStream(timeInMs, changeStream);
 }
 
-module.exports = {
-    changeStreamMonitor : async function main() {
+
+    async function changeStreamMonitor() {
         /**
          * Connection URI. Update <username>, <password>, and <your-cluster-url> to reflect your cluster.
          * See https://docs.mongodb.com/drivers/node/ for more details
          */
         const uri = CONNECTION_URL;
-        
         /**
          * The Mongo Client you will use to interact with your database
          * See https://mongodb.github.io/node-mongodb-native/3.6/api/MongoClient.html for more details
@@ -59,6 +63,7 @@ module.exports = {
          * const client =  new MongoClient(uri, {useUnifiedTopology: true})
          */
         const client = new MongoClient(uri, { useUnifiedTopology: true });
+        
 
         try {
             // Connect to the MongoDB cluster
@@ -72,8 +77,9 @@ module.exports = {
             //await client.close();
         }
     }
-}
 
+
+exports.changeStreamMonitor = changeStreamMonitor;
 
 // main().catch(console.error);
 
