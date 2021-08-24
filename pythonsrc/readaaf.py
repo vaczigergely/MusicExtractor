@@ -206,7 +206,7 @@ def worker():
 
 if __name__ == "__main__":
     
-    client = MongoClient('mongodb://localhost:27017')
+    client = MongoClient('mongodb://localhost:27017/?replicaSet=rs0&readPreference=primary')
     db = client.musicextractor
     Prefix = 'urn:smpte:umid:'
 

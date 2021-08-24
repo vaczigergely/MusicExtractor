@@ -3,6 +3,7 @@ const config = require('config');
 const CONNECTION_URL = config.get('API.dbconnection');
 const DATABASE_NAME = config.get('API.dbname');
 const DATABASE_COLLECTION = config.get('API.dbcollection');
+const io = require('socket.io-client')
 //const io = require('https://cdn.socket.io/3.1.3/socket.io.min.js');
 
 
@@ -22,18 +23,17 @@ function closeChangeStream(timeInMs = 120000, changeStream) {
 async function monitorListingsUsingEventEmitter(client, timeInMs = 60000, pipeline = []){
     const collection = client.db(DATABASE_NAME).collection(DATABASE_COLLECTION);
     let cachedResumeToken;
-    let changeStream = collection.watch(resume_after=cachedResumeToken);
+    let changeStream = module.exports = collection.watch(resume_after=cachedResumeToken);
 
     changeStream.on('change', (change) => {
         // TODO if operationType is update then emit status change
         cachedResumeToken = change["_id"]
-
-        const socket = require('./index.js').socket;     
-        socket.emit("helloFromChangeStream", { a: "This is coming from changeStream.js", c: [] });
         
         if(change.operationType == 'update')
         {
-            console.log(change.operationType);
+            const socket = io();
+            socket.emit("helloFromChangeStream", { 'Message' : 'This is coming from changeStream' });
+            console.log('Update event emitted');
         }
     });
 
