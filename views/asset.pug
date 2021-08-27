@@ -34,21 +34,21 @@ head
         background-color: #51545F;
         color: white; 
         }
-        #Queued {
+        .Queued {
         background: linear-gradient(90deg, rgba(11,161,182,1) 0%, rgba(0,212,255,1) 100%);
         border-radius: 25px;
         padding: 3px;
         width: 90px;
         text-align: center;
         }
-        #Done {
+        .Done {
         background: linear-gradient(90deg, rgba(69,224,136,1) 0%, rgba(0,212,255,1) 100%);
         border-radius: 25px;
         padding: 3px;
         width: 90px;
         text-align: center;
         }
-        #Error {
+        .Error {
         background: linear-gradient(90deg, rgba(255,195,110,1) 49%, rgba(255,165,91,1) 100%);
         border-radius: 25px;
         padding: 3px;
@@ -80,7 +80,7 @@ body
                     td=item.name
                     td=item.sentBy
                     td
-                        div(id = `${item.status}`)=item.status
+                        div(class = `${item.status}` id = `${item.mobid}`)=item.status
                     td
                         img(src='images/trash.svg')#logo
                         a(href=`/remove?glid=${item.mobid}`) REMOVE
@@ -94,7 +94,8 @@ body
         let socket = io();
 
         socket.on('statusChange', function(data) {
-            document.getElementById("data").innerHTML = "Received " + data;
+            document.getElementById(`${data.mobid}`).innerHTML = data.newStatus;
+            document.getElementById(`${data.mobid}`).classList.replace(document.getElementById(`${data.mobid}`).className,data.newStatus);
         });
 
         
