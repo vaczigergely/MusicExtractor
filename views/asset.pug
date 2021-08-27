@@ -84,11 +84,17 @@ body
                     td
                         img(src='images/trash.svg')#logo
                         a(href=`/remove?glid=${item.mobid}`) REMOVE
+    p(id="data")
 
+    script
+    - app.get("socketService").emiter('connection', 'This is coming from asset.pug');
 
     script.
 
-        const socket = io();
-        socket.emit("helloFromAsset", { 'Message' : 'This is coming from asset.pug' });
+        let socket = io();
+
+        socket.on('statusChange', function(data) {
+            document.getElementById("data").innerHTML = "Received " + data;
+        });
 
         

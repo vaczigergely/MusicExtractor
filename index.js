@@ -13,6 +13,7 @@ const DATABASE_NAME = config.get('API.dbname');
 const DATABASE_COLLECTION = config.get('API.dbcollection');
 const controls = require("./controls");
 const { changeStreamMonitor } = require('./changeStreams');
+const SocketService = require('./socketservice');
 
 
 app.use(cors());
@@ -28,7 +29,7 @@ app.use(bodyParser.json());
 let pageInfo = {};
 pageInfo.title = "MusicExtractor";
 pageInfo.queue = [];
-
+pageInfo.app = app;
 
 router.get("/", async (req, res) => {
   console.log('Connecting to the database...');
@@ -127,30 +128,13 @@ router.get('/asset', async (req, res) => {
       }
 });
 
-
+console.log('STARTING');
 
 app.use("/", router);
 const server = http.createServer(app);
 const io = require('socket.io')(server);
 server.listen(process.env.port || PORT);
 
-const socket = exports.socket = io;
+app.set("socketService", new SocketService(server));
 
-io.on('connection', function(socket){
-  console.log(socket.id);
-
-  socket.on('disconnect', (reason) => {
-      console.log(reason);
-  });
-
-  socket.on("helloFromAsset", (data) => {
-    console.log(data);
-  });
-
-  socket.on("helloFromChangeStream", (data) => {
-    console.log(data);
-  });
-});
-
-
-changeStreamMonitor();
+changeStreamMonitor(app);

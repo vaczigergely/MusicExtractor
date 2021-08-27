@@ -1,4 +1,5 @@
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectID } = require('mongodb');
+const mongo = require('mongodb');
 const config = require('config');
 const CONNECTION_URL = config.get('API.dbconnection');
 const DATABASE_NAME = config.get('API.dbname');
@@ -24,13 +25,22 @@ async function monitorListingsUsingEventEmitter(app, timeInMs = 60000, pipeline 
     let cachedResumeToken;
     let changeStream = module.exports = collection.watch(resume_after=cachedResumeToken);
     
-    changeStream.on('change', (change) => {
+    changeStream.on('change', async (change) => {
         // TODO if operationType is update then emit status change
         cachedResumeToken = change["_id"]
         
         if(change.operationType == 'update')
         {
-            app.get("socketService").emiter('connection','This is coming from changeStream');
+            await client.connect();
+        
+            const database = client.db(DATABASE_NAME);
+            const collection = database.collection(DATABASE_COLLECTION);
+
+            let changedId = new mongo.ObjectID(change.documentKey._id);
+
+            let result = await collection.findOne({ "_id" : changedId });
+
+            app.get("socketService").emiter('statusChange',{ 'mobid' : result.mobid, 'newStatus' : change.updateDescription.updatedFields.status });
         }
     });
 
