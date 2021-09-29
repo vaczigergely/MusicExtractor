@@ -26,7 +26,6 @@ async function monitorListingsUsingEventEmitter(app, timeInMs = 60000, pipeline 
     let changeStream = module.exports = collection.watch(resume_after=cachedResumeToken);
     
     changeStream.on('change', async (change) => {
-        // TODO if operationType is update then emit status change
         cachedResumeToken = change["_id"]
         
         if(change.operationType == 'update')
